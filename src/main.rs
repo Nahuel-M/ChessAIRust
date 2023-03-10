@@ -5,9 +5,9 @@ fn main() {
     let mut board = Board::new();
     for _ in 0..60{
         let legal_moves = board.legal_moves();
-        board = pick_random_move(&legal_moves);
         print!("{}", legal_moves.len());
         print!("{board}");
+        board = pick_random_move(&legal_moves);
     }
 }
 

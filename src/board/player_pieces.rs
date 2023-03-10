@@ -39,7 +39,7 @@ impl PlayerPieces{
     pub fn get_occupied_bitboard(&self) -> u64{
         self.pawns | self.rooks | self.kings | self.knights | self.bishops | self.queens
     }
-    pub fn get_piece(&mut self, piece: PieceType) -> &mut u64{
+    pub fn get_piece_mut(&mut self, piece: PieceType) -> &mut u64{
         match piece {
             PieceType::Pawn => &mut self.pawns,
             PieceType::Rook => &mut self.rooks,
