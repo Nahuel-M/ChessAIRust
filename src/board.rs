@@ -48,13 +48,26 @@ impl Board {
             if turn_pieces.pawns.get_position(position) {
                 self.add_pawn_moves(&mut valid_moves, position, pawn_direction, occupied, occupied_non_turn)
             }
+            // KNIGHTS
+            if turn_pieces.knights.get_position(position){
+                self.add_knight_moves(&mut valid_moves, position, occupied_turn);
+            }
             // KING
-            else if turn_pieces.kings.get_position(position) {
-                self.add_king_moves(&mut valid_moves, position, occupied, occupied_non_turn);
-            }            
+            // TODO (jweener): implement king movement.
+            // else if turn_pieces.kings.get_position(position) {
+            //     self.add_king_moves(&mut valid_moves, position, occupied, occupied_non_turn);
+            // }
             // BISHOPS
             else if turn_pieces.bishops.get_position(position) {
-                self.add_bishop_moves(&mut valid_moves, position, occupied, occupied_turn, occupied_non_turn)
+                self.add_bishop_moves(&mut valid_moves, position, occupied_turn, occupied_non_turn)
+            }
+            // ROOKS
+            else if turn_pieces.rooks.get_position(position) {
+                self.add_rook_moves(&mut valid_moves, position, occupied_turn, occupied_non_turn)
+            }
+            // QUEEN
+            else if turn_pieces.queens.get_position(position) {
+                self.add_queen_moves(&mut valid_moves, position, occupied_turn, occupied_non_turn)
             }
             
         }
@@ -88,16 +101,67 @@ impl Board {
         let safe_positions : u64 = 0;
     }
 
-    fn add_bishop_moves(&self, valid_moves: &mut Vec<Board>, position : Position, occupied : u64, occupied_turn: u64, occupied_non_turn : u64){
+    fn add_knight_moves(&self, valid_moves: &mut Vec<Board>, position : Position, occupied_turn: u64){
+        static DIRECTIONS : [(i8, i8); 8] = [(1,2),(2,1),(2,-1),(1,-2),(-1,-2),(-2,-1),(-2,1),(-1,2)];
+        for direction in DIRECTIONS{
+            if let Some(target_position) = position.relative_position(direction.0, direction.1) {
+                if !occupied_turn.get_position(target_position){
+                    let new_board = self.make_move(self.turn, PieceType::Knight, position, target_position);
+                    valid_moves.push(new_board);
+                }
+            }
+        }
+    }
+
+    fn add_bishop_moves(&self, valid_moves: &mut Vec<Board>, position : Position, occupied_turn: u64, occupied_non_turn : u64){
         static DIRECTIONS : [(i8, i8); 4] = [(1,1), (1,-1), (-1, 1), (-1,-1)];
         for direction in DIRECTIONS{
             let mut target_position = position;
             while let Some(temp_pos) = target_position.relative_position(direction.0, direction.1){
                 target_position = temp_pos;
-                if !occupied_turn.get_position(target_position){
-                    let new_board =
-                        self.make_move(self.turn, PieceType::Bishop, position, target_position);
-                    valid_moves.push(new_board);
+                if occupied_turn.get_position(target_position){
+                    break;
+                }
+                let new_board = self.make_move(self.turn, PieceType::Bishop, position, target_position);
+                valid_moves.push(new_board);
+                if occupied_non_turn.get_position(target_position){
+                    break;
+                }
+            }
+        }
+    }
+
+    fn add_rook_moves(&self, valid_moves: &mut Vec<Board>, position : Position, occupied_turn: u64, occupied_non_turn : u64){
+        static DIRECTIONS : [(i8, i8); 4] = [(0,1), (1,0), (0,-1), (-1,0)];
+        for direction in DIRECTIONS{
+            let mut target_position = position;
+            while let Some(temp_pos) = target_position.relative_position(direction.0, direction.1){
+                target_position = temp_pos;
+                if occupied_turn.get_position(target_position){
+                    break;
+                }
+                let new_board = self.make_move(self.turn, PieceType::Rook, position, target_position);
+                valid_moves.push(new_board);
+                if occupied_non_turn.get_position(target_position){
+                    break;
+                }
+            }
+        }
+    }
+    
+    fn add_queen_moves(&self, valid_moves: &mut Vec<Board>, position : Position, occupied_turn: u64, occupied_non_turn : u64){
+        static DIRECTIONS : [(i8, i8); 8] = [(0,1), (1,1), (1,0), (1,-1),(0,-1),(-1,-1),(-1,0),(-1,1)];
+        for direction in DIRECTIONS{
+            let mut target_position = position;
+            while let Some(temp_pos) = target_position.relative_position(direction.0, direction.1){
+                target_position = temp_pos;
+                if occupied_turn.get_position(target_position){
+                    break;
+                }
+                let new_board = self.make_move(self.turn, PieceType::Queen, position, target_position);
+                valid_moves.push(new_board);
+                if occupied_non_turn.get_position(target_position){
+                    break;
                 }
             }
         }
