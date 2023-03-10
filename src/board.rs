@@ -1,83 +1,21 @@
+mod player_pieces;
+mod position;
+mod potential_piece;
+mod piece_type;
+mod player;
+mod index;
+
 use std::fmt::Display;
 
 use strum::IntoEnumIterator;
-use strum_macros::EnumIter;
 
-trait Index{
-    fn at_index(&self, index: usize) -> bool;
-}
+use self::{
+    player_pieces::PlayerPieces, position::Position,
+    potential_piece::PotentialPiece, piece_type::PieceType, player::Player, index::Index,
+};
 
-impl Index for u64{
-    #[inline]
-    fn at_index(&self, index: usize) -> bool {
-        self >> index & 1 == 1
-    }
-}
 
-#[derive(Debug, EnumIter, Clone, Copy)]
-enum Player {
-    Black,
-    White,
-}
-
-#[derive(Debug, EnumIter, Clone, Copy)]
-enum Piece {
-    Pawn,
-    Rook,
-    Knight,
-    Bishop,
-    Queen,
-    King,
-}
-
-#[allow(dead_code)]
-struct PlayerPieces {
-    pawns: u64,
-    rooks: u64,
-    knights: u64,
-    bishops: u64,
-    queens: u64,
-    kings: u64,
-}
-
-impl PlayerPieces{
-    pub fn new(player : Player) -> Self{
-        match player{
-            Player::Black => {
-                let pawns   : u64 = 0b0000000011111111000000000000000000000000000000000000000000000000;
-                let rooks   : u64 = 0b1000000100000000000000000000000000000000000000000000000000000000;
-                let knights : u64 = 0b0100001000000000000000000000000000000000000000000000000000000000;
-                let bishops : u64 = 0b0010010000000000000000000000000000000000000000000000000000000000;
-                let queens  : u64 = 0b0000100000000000000000000000000000000000000000000000000000000000;
-                let kings   : u64 = 0b0001000000000000000000000000000000000000000000000000000000000000;
-                PlayerPieces { pawns, rooks, knights, bishops, queens, kings }
-            },
-
-            Player::White => {
-                let pawns   : u64 = 0b0000000000000000000000000000000000000000000000001111111100000000;
-                let rooks   : u64 = 0b0000000000000000000000000000000000000000000000000000000010000001;
-                let knights : u64 = 0b0000000000000000000000000000000000000000000000000000000001000010;
-                let bishops : u64 = 0b0000000000000000000000000000000000000000000000000000000000100100;
-                let queens  : u64 = 0b0000000000000000000000000000000000000000000000000000000000001000;
-                let kings   : u64 = 0b0000000000000000000000000000000000000000000000000000000000010000;
-                PlayerPieces { pawns, rooks, knights, bishops, queens, kings }
-            },
-        }
-    }
-}
-
-impl PlayerPieces{
-    fn get_piece(&self, piece: Piece) -> u64{
-        match piece {
-            Piece::Pawn => self.pawns,
-            Piece::Rook => self.rooks,
-            Piece::Knight => self.knights,
-            Piece::Bishop => self.bishops,
-            Piece::Queen => self.queens,
-            Piece::King => self.kings,
-        }
-    }
-}
+#[derive(Clone, Copy)]
 pub struct Board {
     white_pieces: PlayerPieces,
     black_pieces: PlayerPieces,
@@ -86,67 +24,78 @@ pub struct Board {
     // ToDo: Keep track of en passant, castling, repeated moves
 }
 
-impl Display for Board{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut pieces_vector : Vec<PotentialPiece> = Vec::with_capacity(64);
-        for index in 0..64 {
-            pieces_vector.push(self.get_piece_at_index(index).into())
-        }
-        pieces_vector
-            .chunks(8)
-            .for_each(|chunk|{
-                chunk.iter()
-                    .for_each(|potential_piece| write!(f, "{}", potential_piece).unwrap());
-                writeln!(f).unwrap();
-            });
-        write!(f, "")
-    }
-}
-
-struct PotentialPiece(Option<(Player, Piece)>);
-
-impl From<Option<(Player, Piece)>> for PotentialPiece{
-    fn from(value: Option<(Player, Piece)>) -> Self {
-        Self(value)
-    }
-}
-
-impl Display for PotentialPiece{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.0.is_none(){
-            return write!(f, "{:^2}", "🩠");
-        }
-        let (player, piece) = self.0.unwrap();
-        let symbol = match (player, piece){
-            (Player::Black, Piece::Pawn) => "♟",
-            (Player::Black, Piece::Rook) => "♜",
-            (Player::Black, Piece::Knight) => "♞",
-            (Player::Black, Piece::Bishop) => "♝",
-            (Player::Black, Piece::Queen) => "♛",
-            (Player::Black, Piece::King) => "♚",
-            (Player::White, Piece::Pawn) => "♙",
-            (Player::White, Piece::Rook) => "♖",
-            (Player::White, Piece::Knight) => "♘",
-            (Player::White, Piece::Bishop) => "♗",
-            (Player::White, Piece::Queen) => "♕",
-            (Player::White, Piece::King) => "♔",
-        };
-        
-        write!(f, "{:^2}", symbol)
-    }
-}
-
 impl Board {
-    pub fn new() -> Self{
-        Board { white_pieces: PlayerPieces::new(Player::White), black_pieces: PlayerPieces::new(Player::Black), turn: Player::White }
+    pub fn new() -> Self {
+        Board {
+            white_pieces: PlayerPieces::new(Player::White),
+            black_pieces: PlayerPieces::new(Player::Black),
+            turn: Player::White,
+        }
     }
     pub fn legal_moves(&self) -> Vec<Board> {
-        let turn_pieces = self.get_turn_pieces();
-        Piece::iter().for_each(|piece|{
-            let bit_board = turn_pieces.get_piece(piece);
-        });
+        let occupied_turn = self.get_turn_pieces().get_occupied_bitboard();
+        let occupied_non_turn = self.get_non_turn_pieces().get_occupied_bitboard();
+        let mut valid_moves = vec![];
+        let occupied = occupied_turn | occupied_non_turn;
 
-        Vec::<Board>::new()
+        let turn_pieces = self.get_turn_pieces();
+        let direction = (self.turn == Player::White) as i8 * 2 - 1;
+        let pawns = turn_pieces.pawns;
+        for index in 0..64 {
+            if pawns.get_position(index.into()) {
+                let new_position = Position(index).relative_position(0, direction);
+                if let Some(new_position) = new_position{
+                    if !occupied.get_position(new_position) {
+                        let new_board =
+                            self.make_move(self.turn, PieceType::Pawn, index.into(), new_position);
+                        valid_moves.push(new_board);
+                    }
+                }
+                let new_position = Position(index).relative_position(direction, direction);
+                if let Some(new_position) = new_position{
+                    if occupied_non_turn.get_position(new_position) {
+                        let new_board =
+                            self.make_move(self.turn, PieceType::Pawn, index.into(), new_position);
+                        valid_moves.push(new_board);
+                    }
+                }
+                let new_position = Position(index).relative_position(-direction, direction);
+                if let Some(new_position) = new_position{
+                    if occupied_non_turn.get_position(new_position) {
+                        let new_board =
+                            self.make_move(self.turn, PieceType::Pawn, index.into(), new_position);
+                        valid_moves.push(new_board);
+                    }
+                }
+            }
+        }
+        valid_moves
+    }
+
+    #[inline]
+    fn make_move(
+        &self,
+        player: Player,
+        piece: PieceType,
+        start_position: Position,
+        end_position: Position,
+    ) -> Board {
+        let mut new_board = *self;
+        let (player_pieces, opponent_pieces) = match player {
+            Player::Black => (&mut new_board.black_pieces, &mut new_board.white_pieces),
+            Player::White => (&mut new_board.white_pieces, &mut new_board.black_pieces),
+        };
+        let pieces = player_pieces.get_piece(piece);
+        pieces.set_position(start_position, false);
+        pieces.set_position(end_position, true);
+        opponent_pieces.set_position(end_position, false);
+
+        new_board.turn = match new_board.turn {
+            Player::Black => Player::White,
+            Player::White => Player::Black,
+        };
+
+        new_board
     }
 
     fn get_turn_pieces(&self) -> &PlayerPieces {
@@ -155,7 +104,7 @@ impl Board {
             Player::White => &self.white_pieces,
         }
     }
-    
+
     fn get_non_turn_pieces(&self) -> &PlayerPieces {
         match self.turn {
             Player::White => &self.black_pieces,
@@ -163,21 +112,20 @@ impl Board {
         }
     }
 
-    fn get_player_pieces(&self, player : Player) -> &PlayerPieces{
-        match player{
+    fn get_player_pieces(&self, player: Player) -> &PlayerPieces {
+        match player {
             Player::Black => &self.black_pieces,
             Player::White => &self.white_pieces,
         }
     }
 
-    fn get_piece_at_index(&self, index: usize) -> Option<(Player, Piece)>{
-        let mut result : Option<(Player, Piece)> = None;
+    fn get_piece_at_index(&self, index: i8) -> Option<(Player, PieceType)> {
+        let mut result: Option<(Player, PieceType)> = None;
 
-        Player::iter().for_each(|player|{
-            let pieces = self.get_player_pieces(player);
-            let piece = Piece::iter()
-                .find(|piece| pieces.get_piece(*piece).at_index(index));
-            if let Some(piece) = piece{
+        Player::iter().for_each(|player| {
+            let mut pieces = *self.get_player_pieces(player);
+            let piece = PieceType::iter().find(|piece| pieces.get_piece(*piece).get_position(Position(index)));
+            if let Some(piece) = piece {
                 result = Some((player, piece));
             }
         });
@@ -185,3 +133,27 @@ impl Board {
         result
     }
 }
+
+impl Display for Board {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f).unwrap();
+        let mut pieces_vector: Vec<PotentialPiece> = Vec::with_capacity(64);
+        for index in 0..64 {
+            pieces_vector.push(self.get_piece_at_index(index).into())
+        }
+        pieces_vector.chunks(8).for_each(|chunk| {
+            chunk
+                .iter()
+                .for_each(|potential_piece| write!(f, "{}", potential_piece).unwrap());
+            writeln!(f).unwrap();
+        });
+        writeln!(f)
+    }
+}
+
+impl core::fmt::Debug for Board {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self}")
+    }
+}
+
