@@ -7,8 +7,6 @@ mod index;
 
 use std::fmt::Display;
 
-use strum::IntoEnumIterator;
-
 use self::{
     player_pieces::PlayerPieces, position::Position,
     potential_piece::PotentialPiece, piece_type::PieceType, player::Player, index::Index,
@@ -153,9 +151,9 @@ impl Board {
     fn get_piece_at_index(&self, index: i8) -> Option<(Player, PieceType)> {
         let mut result: Option<(Player, PieceType)> = None;
 
-        Player::iter().for_each(|player| {
+        player::PLAYERS.into_iter().for_each(|player| {
             let mut pieces = *self.get_player_pieces(player);
-            let piece = PieceType::iter().find(|piece| pieces.get_piece_mut(*piece).get_position(Position(index)));
+            let piece = piece_type::PIECE_TYPES.into_iter().find(|piece| pieces.get_piece_mut(*piece).get_position(Position(index)));
             if let Some(piece) = piece {
                 result = Some((player, piece));
             }

@@ -1,6 +1,4 @@
-use strum_macros::EnumIter;
-
-#[derive(Debug, EnumIter, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum PieceType {
     Pawn,
     Rook,
@@ -9,3 +7,12 @@ pub enum PieceType {
     Queen,
     King,
 }
+
+pub const PIECE_TYPES: [PieceType; 6] = [
+        PieceType::Pawn,
+        PieceType::Rook,
+        PieceType::Knight,
+        PieceType::Bishop,
+        PieceType::Queen,
+        PieceType::King,
+    ];

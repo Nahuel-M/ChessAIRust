@@ -10,7 +10,18 @@ impl Position{
             None
         }
     }
+
+    pub fn x(&self) -> i8{
+        self.0 % 8
+    }
+
+    pub fn y(&self) -> i8{
+        self.0 / 8
+    }
     
+    pub fn all_positions_iter() -> impl Iterator<Item = Position>{
+        (0..64).into_iter().map(Position)
+    }
 }
 
 impl From<(i8, i8)> for Position{
