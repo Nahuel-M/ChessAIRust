@@ -4,6 +4,7 @@ mod potential_piece;
 mod piece_type;
 mod player;
 mod index;
+mod widget;
 
 use std::fmt::Display;
 
@@ -148,14 +149,14 @@ impl Board {
         }
     }
 
-    fn get_piece_at_index(&self, index: i8) -> Option<(Player, PieceType)> {
-        let mut result: Option<(Player, PieceType)> = None;
+    fn get_piece_at_position(&self, position: Position) -> PotentialPiece {
+        let mut result: PotentialPiece = None.into();
 
         player::PLAYERS.into_iter().for_each(|player| {
             let mut pieces = *self.get_player_pieces(player);
-            let piece = piece_type::PIECE_TYPES.into_iter().find(|piece| pieces.get_piece_mut(*piece).get_position(Position(index)));
+            let piece = piece_type::PIECE_TYPES.into_iter().find(|piece| pieces.get_piece_mut(*piece).get_position(position));
             if let Some(piece) = piece {
-                result = Some((player, piece));
+                result = Some((player, piece)).into();
             }
         });
 
@@ -167,8 +168,8 @@ impl Display for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f).unwrap();
         let mut pieces_vector: Vec<PotentialPiece> = Vec::with_capacity(64);
-        for index in 0..64 {
-            pieces_vector.push(self.get_piece_at_index(index).into())
+        for position in Position::all_positions_iter() {
+            pieces_vector.push(self.get_piece_at_position(position))
         }
         pieces_vector.chunks(8).for_each(|chunk| {
             chunk
@@ -186,3 +187,11 @@ impl core::fmt::Debug for Board {
     }
 }
 
+impl Default for Board{
+    fn default() -> Board {
+        Board { 
+            white_pieces: PlayerPieces::new(Player::White), 
+            black_pieces: PlayerPieces::new(Player::Black), 
+            turn: Player::White }
+    }
+}
