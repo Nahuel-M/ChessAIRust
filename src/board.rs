@@ -2,7 +2,7 @@ mod player_pieces;
 mod position;
 mod potential_piece;
 mod piece_type;
-mod player;
+pub mod player_color;
 mod index;
 mod widget;
 
@@ -10,25 +10,25 @@ use std::fmt::Display;
 
 use self::{
     player_pieces::PlayerPieces, position::Position,
-    potential_piece::PotentialPiece, piece_type::PieceType, player::Player, index::Index,
+    potential_piece::PotentialPiece, piece_type::PieceType, player_color::PlayerColor, index::Index,
 };
 
 
 #[derive(Clone, Copy)]
 pub struct Board {
-    white_pieces: PlayerPieces,
-    black_pieces: PlayerPieces,
+    pub white_pieces: PlayerPieces,
+    pub black_pieces: PlayerPieces,
 
-    turn: Player,
+    pub turn: PlayerColor,
     // ToDo: Keep track of en passant, castling, repeated moves
 }
 
 impl Board {
     pub fn new() -> Self {
         Board {
-            white_pieces: PlayerPieces::new(Player::White),
-            black_pieces: PlayerPieces::new(Player::Black),
-            turn: Player::White,
+            white_pieces: PlayerPieces::new(PlayerColor::White),
+            black_pieces: PlayerPieces::new(PlayerColor::Black),
+            turn: PlayerColor::White,
         }
     }
     pub fn legal_moves(&self) -> Vec<Board> {
@@ -39,7 +39,7 @@ impl Board {
         let mut valid_moves = Vec::<Board>::with_capacity(32);
 
         let turn_pieces = self.get_turn_pieces();
-        let pawn_direction = (self.turn == Player::White) as i8 * 2 - 1;
+        let pawn_direction = (self.turn == PlayerColor::White) as i8 * 2 - 1;
 
         for index in 0..64 {
             let position = Position(index);
@@ -105,15 +105,15 @@ impl Board {
     #[inline]
     fn make_move(
         &self,
-        player: Player,
+        player: PlayerColor,
         piece: PieceType,
         start_position: Position,
         end_position: Position,
     ) -> Board {
         let mut new_board = *self;
         let (player_pieces, opponent_pieces) = match player {
-            Player::Black => (&mut new_board.black_pieces, &mut new_board.white_pieces),
-            Player::White => (&mut new_board.white_pieces, &mut new_board.black_pieces),
+            PlayerColor::Black => (&mut new_board.black_pieces, &mut new_board.white_pieces),
+            PlayerColor::White => (&mut new_board.white_pieces, &mut new_board.black_pieces),
         };
         let pieces = player_pieces.get_piece_mut(piece);
         pieces.set_position(start_position, false);
@@ -121,8 +121,8 @@ impl Board {
         opponent_pieces.set_position(end_position, false);
 
         new_board.turn = match new_board.turn {
-            Player::Black => Player::White,
-            Player::White => Player::Black,
+            PlayerColor::Black => PlayerColor::White,
+            PlayerColor::White => PlayerColor::Black,
         };
 
         new_board
@@ -130,29 +130,29 @@ impl Board {
 
     fn get_turn_pieces(&self) -> &PlayerPieces {
         match self.turn {
-            Player::Black => &self.black_pieces,
-            Player::White => &self.white_pieces,
+            PlayerColor::Black => &self.black_pieces,
+            PlayerColor::White => &self.white_pieces,
         }
     }
 
     fn get_non_turn_pieces(&self) -> &PlayerPieces {
         match self.turn {
-            Player::White => &self.black_pieces,
-            Player::Black => &self.white_pieces,
+            PlayerColor::White => &self.black_pieces,
+            PlayerColor::Black => &self.white_pieces,
         }
     }
 
-    fn get_player_pieces(&self, player: Player) -> &PlayerPieces {
+    fn get_player_pieces(&self, player: PlayerColor) -> &PlayerPieces {
         match player {
-            Player::Black => &self.black_pieces,
-            Player::White => &self.white_pieces,
+            PlayerColor::Black => &self.black_pieces,
+            PlayerColor::White => &self.white_pieces,
         }
     }
 
     fn get_piece_at_position(&self, position: Position) -> PotentialPiece {
         let mut result: PotentialPiece = None.into();
 
-        player::PLAYERS.into_iter().for_each(|player| {
+        player_color::PLAYERS.into_iter().for_each(|player| {
             let mut pieces = *self.get_player_pieces(player);
             let piece = piece_type::PIECE_TYPES.into_iter().find(|piece| pieces.get_piece_mut(*piece).get_position(position));
             if let Some(piece) = piece {
@@ -190,8 +190,8 @@ impl core::fmt::Debug for Board {
 impl Default for Board{
     fn default() -> Board {
         Board { 
-            white_pieces: PlayerPieces::new(Player::White), 
-            black_pieces: PlayerPieces::new(Player::Black), 
-            turn: Player::White }
+            white_pieces: PlayerPieces::new(PlayerColor::White), 
+            black_pieces: PlayerPieces::new(PlayerColor::Black), 
+            turn: PlayerColor::White }
     }
 }

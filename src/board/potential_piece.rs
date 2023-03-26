@@ -1,12 +1,12 @@
 use std::fmt::Display;
 
-use super::{player::Player, piece_type::PieceType};
+use super::{player_color::PlayerColor, piece_type::PieceType};
 
 
-pub struct PotentialPiece(Option<(Player, PieceType)>);
+pub struct PotentialPiece(Option<(PlayerColor, PieceType)>);
 
-impl From<Option<(Player, PieceType)>> for PotentialPiece{
-    fn from(value: Option<(Player, PieceType)>) -> Self {
+impl From<Option<(PlayerColor, PieceType)>> for PotentialPiece{
+    fn from(value: Option<(PlayerColor, PieceType)>) -> Self {
         Self(value)
     }
 }
@@ -34,18 +34,18 @@ impl PotentialPiece{
 
         let (player, piece) = self.0.unwrap();
         match (player, piece){
-            (Player::Black, PieceType::Pawn)   => '♙',
-            (Player::Black, PieceType::Rook)   => '♖',
-            (Player::Black, PieceType::Knight) => '♘',
-            (Player::Black, PieceType::Bishop) => '♗',
-            (Player::Black, PieceType::Queen)  => '♕',
-            (Player::Black, PieceType::King)   => '♔',
-            (Player::White, PieceType::Pawn)   => '♟',
-            (Player::White, PieceType::Rook)   => '♜',
-            (Player::White, PieceType::Knight) => '♞',
-            (Player::White, PieceType::Bishop) => '♝',
-            (Player::White, PieceType::Queen)  => '♛',
-            (Player::White, PieceType::King)   => '♚',
+            (PlayerColor::Black, PieceType::Pawn)   => '♙',
+            (PlayerColor::Black, PieceType::Rook)   => '♖',
+            (PlayerColor::Black, PieceType::Knight) => '♘',
+            (PlayerColor::Black, PieceType::Bishop) => '♗',
+            (PlayerColor::Black, PieceType::Queen)  => '♕',
+            (PlayerColor::Black, PieceType::King)   => '♔',
+            (PlayerColor::White, PieceType::Pawn)   => '♟',
+            (PlayerColor::White, PieceType::Rook)   => '♜',
+            (PlayerColor::White, PieceType::Knight) => '♞',
+            (PlayerColor::White, PieceType::Bishop) => '♝',
+            (PlayerColor::White, PieceType::Queen)  => '♛',
+            (PlayerColor::White, PieceType::King)   => '♚',
         }
     }
 }

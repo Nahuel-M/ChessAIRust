@@ -1,4 +1,4 @@
-use super::{player::Player, piece_type::PieceType, index::Index, position::Position};
+use super::{player_color::PlayerColor, piece_type::PieceType, index::Index, position::Position};
 
 #[allow(dead_code)]
 #[derive(Clone, Copy)]
@@ -12,9 +12,9 @@ pub struct PlayerPieces {
 }
 
 impl PlayerPieces{
-    pub fn new(player : Player) -> Self{
+    pub fn new(player : PlayerColor) -> Self{
         match player{
-            Player::Black => {
+            PlayerColor::Black => {
                 let pawns   : u64 = 0b0000000011111111000000000000000000000000000000000000000000000000;
                 let rooks   : u64 = 0b1000000100000000000000000000000000000000000000000000000000000000;
                 let knights : u64 = 0b0100001000000000000000000000000000000000000000000000000000000000;
@@ -24,7 +24,7 @@ impl PlayerPieces{
                 PlayerPieces { pawns, rooks, knights, bishops, queens, kings }
             },
 
-            Player::White => {
+            PlayerColor::White => {
                 let pawns   : u64 = 0b0000000000000000000000000000000000000000000000001111111100000000;
                 let rooks   : u64 = 0b0000000000000000000000000000000000000000000000000000000010000001;
                 let knights : u64 = 0b0000000000000000000000000000000000000000000000000000000001000010;
